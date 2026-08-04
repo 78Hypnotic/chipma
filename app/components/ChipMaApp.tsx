@@ -47,8 +47,9 @@ import {
   type ShapeId,
   type SizeId,
 } from "../lib/configurator";
+import { PRINTMA_CONTACT } from "../lib/contact";
 
-const CONTACT_EMAIL = "printmagbr@gmail.com";
+const CONTACT_EMAIL = PRINTMA_CONTACT.email;
 const ALLOWED_LOGO_TYPES = new Set([
   "image/png",
   "image/jpeg",
@@ -687,9 +688,14 @@ export function ChipMaApp() {
             <a href="#konfigurator">Konfigurator</a>
             <a href="#material">Material</a>
             <a href="#faq">FAQ</a>
-            <a href={`mailto:${CONTACT_EMAIL}`}>Kontakt</a>
+            <a href={PRINTMA_CONTACT.contactUrl}>Kontakt</a>
+            <a href={PRINTMA_CONTACT.privacyUrl}>Datenschutz</a>
+            <a href={PRINTMA_CONTACT.legalNoticeUrl}>Impressum</a>
           </nav>
-          <p>© 2026 PrintMa GbR · ChipMa ist eine Marke der PrintMa GbR</p>
+          <p>
+            © 2026 {PRINTMA_CONTACT.company} · ChipMa ist eine Marke der PrintMa
+            GbR
+          </p>
         </div>
       </footer>
     </div>

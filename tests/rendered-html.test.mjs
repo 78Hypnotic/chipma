@@ -39,6 +39,10 @@ test("server-renders the finished ChipMa landing page", async () => {
   assert.match(html, /Ihr ChipMa-Konfigurator/);
   assert.match(html, /Anfrage sicher senden/);
   assert.match(html, /Material &amp; Verfahren/);
+  assert.match(html, /Randenstr\. 8/);
+  assert.match(html, /78234/);
+  assert.match(html, /printmagbr@gmail\.com/);
+  assert.match(html, /https:\/\/printma\.net\/policies\/legal-notice/);
   assert.doesNotMatch(html, /codex-preview|SkeletonPreview|react-loading-skeleton/i);
 });
 

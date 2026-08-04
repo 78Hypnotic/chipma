@@ -1,3 +1,5 @@
+import { PRINTMA_CONTACT } from "../lib/contact";
+
 type Benefit = Readonly<{
   marker: string;
   title: string;
@@ -355,7 +357,14 @@ export function MarketingSections() {
               Ihr Vorhaben. Auch eine Anfrage ohne fertiges Logo ist möglich.
             </p>
             <address className="contact-section__location">
-              PrintMa GbR · Engen, Deutschland
+              <strong>{PRINTMA_CONTACT.company}</strong>
+              <br />
+              {PRINTMA_CONTACT.street}, {PRINTMA_CONTACT.postalCode}{" "}
+              {PRINTMA_CONTACT.city}
+              <br />
+              <a href={`mailto:${PRINTMA_CONTACT.email}`}>
+                {PRINTMA_CONTACT.email}
+              </a>
             </address>
           </div>
 
@@ -365,9 +374,15 @@ export function MarketingSections() {
             </a>
             <a
               className="button button--secondary"
-              href="mailto:printmagbr@gmail.com"
+              href={`mailto:${PRINTMA_CONTACT.email}`}
             >
               Per E-Mail anfragen
+            </a>
+            <a
+              className="button button--secondary"
+              href={PRINTMA_CONTACT.websiteUrl}
+            >
+              Zur PrintMa-Homepage
             </a>
           </div>
         </div>
