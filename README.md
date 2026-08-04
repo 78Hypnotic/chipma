@@ -40,10 +40,20 @@ Domain-Logik- und SSR-Tests aus.
 
 ## Anfragefluss
 
-Die Website speichert keine Kundendaten. Ein Klick auf „Unverbindlich
-anfragen“ öffnet das lokale E-Mail-Programm mit einer vorausgefüllten
-Konfigurationszusammenfassung. Hochgeladene Logos bleiben für die Vorschau im
-Browser und werden nicht an einen Server übertragen.
+Das Anfrageformular sendet validierte Kontaktdaten und die Konfiguration über
+eine gleichnamige Website-API an eine key-authentifizierte Supabase Edge
+Function. Postgres berechnet den angezeigten Preis erneut, erzwingt ein
+persistentes Rate Limit und speichert die Anfrage in einer per RLS
+abgeschotteten Tabelle. Die E-Mail-Anfrage bleibt als Fallback verfügbar.
+
+Für die lokale Entwicklung werden folgende Werte benötigt:
+
+```bash
+cp .env.example .env.local
+```
+
+Hochgeladene Logos bleiben weiterhin im Browser; gespeichert wird nur der
+bereinigte Dateiname. API-Schlüssel und Secrets werden nicht committed.
 
 Die angezeigten Preise sind als Platzhalter gekennzeichnet und müssen vor einem
 Produktivstart fachlich freigegeben werden.

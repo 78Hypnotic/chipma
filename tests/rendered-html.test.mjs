@@ -37,6 +37,7 @@ test("server-renders the finished ChipMa landing page", async () => {
   assert.match(html, /ChipMa/);
   assert.match(html, /Pfandchips, die niemand wegwirft/);
   assert.match(html, /Ihr ChipMa-Konfigurator/);
+  assert.match(html, /Anfrage sicher senden/);
   assert.match(html, /Material &amp; Verfahren/);
   assert.doesNotMatch(html, /codex-preview|SkeletonPreview|react-loading-skeleton/i);
 });

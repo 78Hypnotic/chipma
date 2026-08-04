@@ -20,9 +20,10 @@ auf jede Änderung; die finale Anfrage wird als vorausgefüllte E-Mail an PrintM
 
 ## Daten und Sicherheit
 
-Die Konfiguration bleibt ausschließlich im React-State. Es gibt keine API-Route,
-keine Datenbank und keine serverseitige Speicherung. Damit ist für den aktuellen
-Anfragefluss kein serverseitiges Rate Limiting erforderlich.
+Die laufende Konfiguration bleibt bis zum Absenden im React-State. Das
+Anfrageformular sendet Kontaktdaten und Konfiguration über `/api/inquiries` an
+eine Supabase Edge Function. Die API-Route und Postgres erzwingen jeweils ein
+Limit von fünf Anfragen innerhalb von zehn Minuten.
 
 User-Input wird begrenzt und bereinigt:
 
@@ -32,8 +33,9 @@ User-Input wird begrenzt und bereinigt:
 - Dateiname: vor der Übernahme in die Zusammenfassung bereinigt
 
 Logo-Dateien werden nur über eine lokale Object-URL dargestellt und nicht
-übertragen. PDF-Dateien werden akzeptiert, aber aus Sicherheits- und
-Kompatibilitätsgründen nicht direkt im Browser gerendert.
+übertragen. Gespeichert wird nur der bereinigte Dateiname. PDF-Dateien werden
+akzeptiert, aber aus Sicherheits- und Kompatibilitätsgründen nicht direkt im
+Browser gerendert.
 
 ## Preislogik
 
@@ -48,7 +50,12 @@ werden.
 
 ## Anfrage
 
-`buildInquirySummary` erzeugt eine reine Textzusammenfassung. Der Client
-URL-kodiert diese zusammen mit dem Betreff in einem `mailto:`-Link an
-`printmagbr@gmail.com`. Für einen späteren serverseitigen Versand sind
-Validierung, Authentifizierung und Rate Limiting verpflichtend nachzurüsten.
+`validateInquiryPayload` prüft und bereinigt Kontaktdaten sowie jede
+Konfigurationsoption. Die Supabase Edge Function ist ausschließlich mit einem
+Publishable Key erreichbar und schreibt privilegiert in die Datenbank. Die
+Tabelle gewährt weder `anon` noch `authenticated` direkten Zugriff. Ein
+Postgres-Trigger berechnet den Preis unabhängig vom Client und speichert statt
+der IP-Adresse nur einen SHA-256-Fingerprint zur Missbrauchsprävention.
+
+`buildInquirySummary` erzeugt zusätzlich die Textzusammenfassung für Kopieren
+und den weiterhin verfügbaren `mailto:`-Fallback.

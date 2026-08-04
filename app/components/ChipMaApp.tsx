@@ -7,6 +7,7 @@ import {
   useState,
   type ChangeEvent,
   type CSSProperties,
+  type FormEvent,
 } from "react";
 import { MarketingSections } from "./MarketingSections";
 import {
@@ -16,6 +17,7 @@ import {
   ColorSwatch,
   Field,
   PriceSummary,
+  TextareaField,
 } from "./ui";
 import {
   COLORS,
@@ -54,6 +56,24 @@ const ALLOWED_LOGO_TYPES = new Set([
   "application/pdf",
 ]);
 const MAX_LOGO_BYTES = 5 * 1024 * 1024;
+
+interface InquiryFormState {
+  name: string;
+  email: string;
+  company: string;
+  message: string;
+  consent: boolean;
+  website: string;
+}
+
+const EMPTY_INQUIRY: InquiryFormState = {
+  name: "",
+  email: "",
+  company: "",
+  message: "",
+  consent: false,
+  website: "",
+};
 
 function sanitizeFileName(value: string) {
   return value.replace(/[\u0000-\u001f\u007f\\/]/g, "").slice(0, 120);
@@ -189,6 +209,9 @@ export function ChipMaApp() {
   const [logoUrl, setLogoUrl] = useState("");
   const [logoError, setLogoError] = useState("");
   const [copyStatus, setCopyStatus] = useState("");
+  const [inquiry, setInquiry] = useState<InquiryFormState>(EMPTY_INQUIRY);
+  const [inquiryStatus, setInquiryStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
+  const [inquiryMessage, setInquiryMessage] = useState("");
 
   const price = useMemo(() => calculatePrice(config), [config]);
   const inquirySummary = useMemo(() => buildInquirySummary(config), [config]);
@@ -247,6 +270,36 @@ export function ChipMaApp() {
       setCopyStatus("Konfiguration kopiert.");
     } catch {
       setCopyStatus("Kopieren war nicht möglich. Nutzen Sie bitte die E-Mail-Anfrage.");
+    }
+  };
+
+  const updateInquiry = <Key extends keyof InquiryFormState>(
+    key: Key,
+    value: InquiryFormState[Key],
+  ) => setInquiry((current) => ({ ...current, [key]: value }));
+
+  const submitInquiry = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setInquiryStatus("submitting");
+    setInquiryMessage("");
+
+    try {
+      const request = await fetch("/api/inquiries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...inquiry, configuration: config }),
+      });
+      const result = (await request.json().catch(() => null)) as Record<string, unknown> | null;
+      if (!request.ok) {
+        throw new Error(typeof result?.error === "string" ? result.error : "Die Anfrage konnte nicht gesendet werden.");
+      }
+
+      setInquiryStatus("success");
+      setInquiryMessage("Ihre Anfrage ist eingegangen. Wir melden uns mit einem geprüften Angebot.");
+      setInquiry((current) => ({ ...EMPTY_INQUIRY, name: current.name, email: current.email }));
+    } catch (error) {
+      setInquiryStatus("error");
+      setInquiryMessage(error instanceof Error ? error.message : "Die Anfrage konnte nicht gesendet werden.");
     }
   };
 
@@ -535,15 +588,87 @@ export function ChipMaApp() {
                   total={formatEuro(price.total)}
                   note="Unverbindliche Platzhalterkalkulation inkl. 19 % MwSt. Der endgültige Preis folgt nach Designprüfung."
                 />
-                <div className="summary-actions">
-                  <a className="ui-button ui-button--primary ui-button--large" href={mailtoHref}>
-                    Unverbindlich anfragen
-                  </a>
-                  <Button variant="ghost" onClick={copyConfiguration}>
-                    Konfiguration kopieren
+                <form className="inquiry-form" onSubmit={submitInquiry}>
+                  <div className="inquiry-form__heading">
+                    <strong>Unverbindlich anfragen</strong>
+                    <span>Konfiguration und Kontaktdaten werden sicher an PrintMa übermittelt.</span>
+                  </div>
+                  <div className="inquiry-form__grid">
+                    <Field
+                      label="Name"
+                      value={inquiry.name}
+                      onChange={(event) => updateInquiry("name", event.target.value)}
+                      autoComplete="name"
+                      maxLength={80}
+                      required
+                    />
+                    <Field
+                      label="E-Mail"
+                      type="email"
+                      value={inquiry.email}
+                      onChange={(event) => updateInquiry("email", event.target.value)}
+                      autoComplete="email"
+                      maxLength={254}
+                      required
+                    />
+                  </div>
+                  <Field
+                    label="Verein oder Unternehmen (optional)"
+                    value={inquiry.company}
+                    onChange={(event) => updateInquiry("company", event.target.value)}
+                    autoComplete="organization"
+                    maxLength={120}
+                  />
+                  <TextareaField
+                    label="Nachricht (optional)"
+                    value={inquiry.message}
+                    onChange={(event) => updateInquiry("message", event.target.value)}
+                    maxLength={1000}
+                    rows={3}
+                  />
+                  <Field
+                    className="inquiry-form__honeypot"
+                    label="Website"
+                    value={inquiry.website}
+                    onChange={(event) => updateInquiry("website", event.target.value)}
+                    tabIndex={-1}
+                    autoComplete="off"
+                  />
+                  <label className="check-row inquiry-form__consent">
+                    <input
+                      type="checkbox"
+                      checked={inquiry.consent}
+                      onChange={(event) => updateInquiry("consent", event.target.checked)}
+                      required
+                    />
+                    <span>
+                      <strong>Kontaktaufnahme erlauben</strong>
+                      <small>PrintMa darf meine Angaben zur Bearbeitung dieser Anfrage verwenden.</small>
+                    </span>
+                  </label>
+                  <Button
+                    type="submit"
+                    size="large"
+                    disabled={inquiryStatus === "submitting"}
+                  >
+                    {inquiryStatus === "submitting" ? "Wird gesendet …" : "Anfrage sicher senden"}
                   </Button>
+                  <div className="summary-actions">
+                    <Button variant="ghost" onClick={copyConfiguration}>
+                      Konfiguration kopieren
+                    </Button>
+                    <a className="ui-button ui-button--ghost ui-button--medium" href={mailtoHref}>
+                      Alternativ per E-Mail
+                    </a>
+                  </div>
                   <span className="copy-status" aria-live="polite">{copyStatus}</span>
-                </div>
+                  <p
+                    className={`inquiry-form__status inquiry-form__status--${inquiryStatus}`}
+                    aria-live="polite"
+                  >
+                    {inquiryMessage}
+                  </p>
+                </form>
               </Card>
             </aside>
           </div>
