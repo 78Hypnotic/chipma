@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { PRINTMA_CONTACT } from "../lib/contact";
 
 type Benefit = Readonly<{
@@ -25,6 +26,20 @@ type ProcessStep = Readonly<{
 type FaqEntry = Readonly<{
   question: string;
   answer: string;
+}>;
+
+type ComparisonRow = Readonly<{
+  criterion: string;
+  threeDPrint: string;
+  injectionMolding: string;
+  preferred: "three-d-print" | "injection-molding";
+}>;
+
+type ReferenceProject = Readonly<{
+  name: string;
+  detail: string;
+  image: string;
+  alt: string;
 }>;
 
 const benefits = [
@@ -186,9 +201,57 @@ const faqEntries = [
   },
 ] as const satisfies readonly FaqEntry[];
 
+const comparisonRows = [
+  {
+    criterion: "Form & Kontur",
+    threeDPrint: "Sehr frei gestaltbar",
+    injectionMolding: "An ein Werkzeug gebunden",
+    preferred: "three-d-print",
+  },
+  {
+    criterion: "Farbige Oberflächen",
+    threeDPrint: "Mehrfarbig integrierbar",
+    injectionMolding: "Oft zusätzlicher Aufwand",
+    preferred: "three-d-print",
+  },
+  {
+    criterion: "Beidseitige Gestaltung",
+    threeDPrint: "Unterschiedliche Motive möglich",
+    injectionMolding: "Abhängig von Form und Verfahren",
+    preferred: "three-d-print",
+  },
+  {
+    criterion: "Varianten & Änderungen",
+    threeDPrint: "Digital und flexibel",
+    injectionMolding: "Werkzeuganpassung erforderlich",
+    preferred: "three-d-print",
+  },
+  {
+    criterion: "Sehr große, identische Serien",
+    threeDPrint: "Längere Produktionszeit",
+    injectionMolding: "Niedrige Stückkosten möglich",
+    preferred: "injection-molding",
+  },
+] as const satisfies readonly ComparisonRow[];
+
+const referenceProjects = [
+  {
+    name: "TV Ehingen e.V.",
+    detail: "Wappenform · mehrfarbig",
+    image: "/projects/tv-ehingen.webp",
+    alt: "Grün-weiße mehrfarbige Pfandchips des TV Ehingen in individueller Wappenform",
+  },
+  {
+    name: "Stadtmusik Engen",
+    detail: "Vereinswappen · zweifarbig",
+    image: "/projects/stadtmusik-engen.webp",
+    alt: "Blau-weiße Pfandchips der Stadtmusik Engen in Form des Vereinswappens",
+  },
+] as const satisfies readonly ReferenceProject[];
+
 /**
- * Renders the static product education, application, material, process, FAQ,
- * and contact sections that complete the ChipMa landing page.
+ * Renders the static product education, manufacturing comparison, references,
+ * applications, material, process, FAQ, and contact sections.
  */
 export function MarketingSections() {
   return (
@@ -221,6 +284,123 @@ export function MarketingSections() {
                 </p>
               </article>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="vergleich"
+        className="marketing-section comparison-section"
+        aria-labelledby="vergleich-heading"
+      >
+        <div className="marketing-section__inner">
+          <header className="marketing-section__header">
+            <p className="marketing-section__eyebrow">Ehrlich verglichen</p>
+            <h2 id="vergleich-heading">3D-Druck oder Spritzguss?</h2>
+            <p className="marketing-section__intro">
+              Für individualisierte Pfandchips spielt der 3D-Druck seine
+              Stärken besonders bei Varianten, freien Formen und flexiblen
+              Stückzahlen aus.
+            </p>
+          </header>
+
+          <div className="comparison-table-wrap">
+            <table className="comparison-table">
+              <caption>Vergleich von 3D-Druck und Spritzguss für Pfandchips</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Kriterium</th>
+                  <th scope="col" className="comparison-table__recommended">
+                    <span>Unsere Lösung</span>
+                    3D-Druck
+                  </th>
+                  <th scope="col">Spritzguss</th>
+                </tr>
+              </thead>
+              <tbody>
+                {comparisonRows.map((row) => (
+                  <tr key={row.criterion}>
+                    <th scope="row">{row.criterion}</th>
+                    <td
+                      className={
+                        row.preferred === "three-d-print"
+                          ? "comparison-table__positive"
+                          : undefined
+                      }
+                    >
+                      <span aria-hidden="true">
+                        {row.preferred === "three-d-print" ? "✓" : "○"}
+                      </span>
+                      {row.threeDPrint}
+                    </td>
+                    <td
+                      className={
+                        row.preferred === "injection-molding"
+                          ? "comparison-table__positive comparison-table__positive--neutral"
+                          : undefined
+                      }
+                    >
+                      <span aria-hidden="true">
+                        {row.preferred === "injection-molding" ? "✓" : "○"}
+                      </span>
+                      {row.injectionMolding}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <p className="comparison-section__conclusion">
+            <strong>Unser Fazit:</strong> Für individuelle Vereins- und
+            Eventchips mit mehreren Varianten ist 3D-Druck besonders flexibel.
+            Bei extrem großen, dauerhaft identischen Serien kann Spritzguss
+            wirtschaftlicher sein.
+          </p>
+        </div>
+      </section>
+
+      <section
+        id="projekte"
+        className="marketing-section marketing-section--muted reference-section"
+        aria-labelledby="projekte-heading"
+      >
+        <div className="marketing-section__inner">
+          <header className="marketing-section__header">
+            <p className="marketing-section__eyebrow">Echte Projekte</p>
+            <h2 id="projekte-heading">
+              Von der Vereinsfarbe bis zur eigenen Wappenform.
+            </h2>
+            <p className="marketing-section__intro">
+              Diese Pfandchips wurden für regionale Vereine gestaltet und im
+              Mehrfarb-3D-Druck direkt in Engen gefertigt.
+            </p>
+          </header>
+
+          <div className="reference-grid">
+            {referenceProjects.map((project) => (
+              <figure className="reference-card" key={project.name}>
+                <div className="reference-card__image">
+                  <Image
+                    src={project.image}
+                    alt={project.alt}
+                    fill
+                    unoptimized
+                    sizes="(max-width: 760px) 100vw, 50vw"
+                  />
+                </div>
+                <figcaption>
+                  <span>{project.name}</span>
+                  <strong>{project.detail}</strong>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+
+          <div className="marketing-section__action">
+            <a className="button button--secondary" href="#konfigurator">
+              Eigene Form konfigurieren
+            </a>
           </div>
         </div>
       </section>

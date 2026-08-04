@@ -9,6 +9,8 @@ auf jede Änderung; die finale Anfrage wird als vorausgefüllte E-Mail an PrintM
 
 ## Funktionsumfang
 
+- fairer Vergleich von 3D-Druck und Spritzguss mit Einordnung großer Serien
+- Referenzbereich mit real gefertigten Projekten für TV Ehingen und Stadtmusik Engen
 - sechs Formen inklusive eigener Kontur
 - vier Größen und dreizehn Grundfarben
 - optionale zweite Farbe

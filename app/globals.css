@@ -977,6 +977,143 @@ img {
 .application-card { min-height: 148px; }
 .marketing-section__action { margin-top: 28px; }
 
+.comparison-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+}
+
+.comparison-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+}
+
+.comparison-table caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.comparison-table th,
+.comparison-table td {
+  padding: 18px 22px;
+  border-top: 1px solid var(--border-subtle);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.comparison-table thead th {
+  border-top: 0;
+  background: var(--surface-3);
+  color: var(--text-primary);
+  font-size: 15px;
+}
+
+.comparison-table thead th:first-child { width: 28%; }
+
+.comparison-table__recommended {
+  border-top: 2px solid var(--gold) !important;
+}
+
+.comparison-table__recommended span {
+  margin-bottom: 3px;
+  display: block;
+  color: var(--gold-light);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.comparison-table tbody th {
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.comparison-table td {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.comparison-table td > span {
+  width: 24px;
+  margin-right: 8px;
+  display: inline-block;
+  color: var(--text-tertiary);
+  font-weight: 800;
+  text-align: center;
+}
+
+.comparison-table__positive { color: var(--text-primary) !important; }
+.comparison-table__positive > span { color: var(--gold-light) !important; }
+.comparison-table__positive--neutral > span { color: var(--text-primary) !important; }
+
+.comparison-section__conclusion {
+  max-width: 860px;
+  margin: 26px 0 0;
+  padding-left: 18px;
+  border-left: 2px solid var(--gold-dark);
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.comparison-section__conclusion strong { color: var(--text-primary); }
+
+.reference-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.reference-card {
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+}
+
+.reference-card__image {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--surface-3);
+}
+
+.reference-card__image img {
+  object-fit: cover;
+  transition: transform 260ms var(--ease);
+}
+
+.reference-card:hover .reference-card__image img { transform: scale(1.015); }
+
+.reference-card figcaption {
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.reference-card figcaption span {
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.reference-card figcaption strong {
+  color: var(--gold-light);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .button {
   min-height: 48px;
   padding: 0 22px;
@@ -1149,7 +1286,9 @@ img {
   .inquiry-form .summary-actions { grid-template-columns: 1fr; }
   .benefit-grid,
   .application-grid,
+  .reference-grid,
   .process-list { grid-template-columns: 1fr; }
+  .reference-card figcaption { align-items: flex-start; flex-direction: column; gap: 4px; }
   .process-step { min-height: 0; }
   .specification-table th,
   .specification-table td { display: block; width: auto; padding: 13px 16px; }

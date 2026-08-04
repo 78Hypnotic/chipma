@@ -104,10 +104,11 @@ function Header() {
         </a>
         <nav className="site-nav" aria-label="Hauptnavigation">
           <a href="#konfigurator">Konfigurator</a>
+          <a href="#projekte">Projekte</a>
+          <a href="#vergleich">Vergleich</a>
           <a href="#anwendungen">Anwendungen</a>
           <a href="#material">Material</a>
           <a href="#ablauf">Ablauf</a>
-          <a href="#faq">FAQ</a>
         </nav>
         <a className="ui-button ui-button--primary ui-button--medium header-cta" href="#konfigurator">
           Jetzt konfigurieren
@@ -686,6 +687,8 @@ export function ChipMaApp() {
           </div>
           <nav aria-label="Fußnavigation">
             <a href="#konfigurator">Konfigurator</a>
+            <a href="#projekte">Projekte</a>
+            <a href="#vergleich">Vergleich</a>
             <a href="#material">Material</a>
             <a href="#faq">FAQ</a>
             <a href={PRINTMA_CONTACT.contactUrl}>Kontakt</a>

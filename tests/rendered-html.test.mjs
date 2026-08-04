@@ -39,6 +39,10 @@ test("server-renders the finished ChipMa landing page", async () => {
   assert.match(html, /Ihr ChipMa-Konfigurator/);
   assert.match(html, /Anfrage sicher senden/);
   assert.match(html, /Material &amp; Verfahren/);
+  assert.match(html, /3D-Druck oder Spritzguss/);
+  assert.match(html, /TV Ehingen e\.V\./);
+  assert.match(html, /Stadtmusik Engen/);
+  assert.match(html, /\/projects\/tv-ehingen\.webp/);
   assert.match(html, /Randenstr\. 8/);
   assert.match(html, /78234/);
   assert.match(html, /printmagbr@gmail\.com/);
