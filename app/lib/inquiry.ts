@@ -16,6 +16,7 @@ import {
 } from "./configurator.ts";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const COUNTRY_CODE_PATTERN = /^[A-Z]{2}$/;
 const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f]/g;
 
 const shapeIds = new Set(SHAPES.map(({ id }) => id));
@@ -32,7 +33,13 @@ type UnknownRecord = Record<string, unknown>;
 export interface ValidatedInquiry {
   readonly name: string;
   readonly email: string;
+  readonly phone: string;
   readonly company: string;
+  readonly billingStreet: string;
+  readonly billingPostalCode: string;
+  readonly billingCity: string;
+  readonly billingCountryCode: string;
+  readonly vatId: string;
   readonly message: string;
   readonly consent: true;
   readonly configuration: ChipConfiguration;
@@ -104,7 +111,7 @@ function readConfiguration(value: unknown): ChipConfiguration | null {
 }
 
 /**
- * Validates and sanitizes an anonymous inquiry before it reaches any backend.
+ * Validates and sanitizes a guest or customer order before it reaches any backend.
  * Configuration enums are allow-listed and the quoted price is recomputed.
  */
 export function validateInquiryPayload(value: unknown): InquiryValidationResult {
@@ -112,13 +119,38 @@ export function validateInquiryPayload(value: unknown): InquiryValidationResult 
 
   const name = cleanText(value.name, 80);
   const email = cleanText(value.email, 254)?.toLowerCase() ?? null;
+  const phone = cleanText(value.phone ?? "", 40);
   const company = cleanText(value.company ?? "", 120);
+  const billingStreet = cleanText(value.billingStreet, 160);
+  const billingPostalCode = cleanText(value.billingPostalCode, 20);
+  const billingCity = cleanText(value.billingCity, 100);
+  const billingCountryCode = cleanText(value.billingCountryCode, 3)?.toUpperCase() ?? null;
+  const vatId = cleanText(value.vatId ?? "", 40);
   const message = cleanText(value.message ?? "", 1000);
   const website = cleanText(value.website ?? "", 200);
   const configuration = readConfiguration(value.configuration);
 
-  if (!name || !email || !EMAIL_PATTERN.test(email) || company === null || message === null) {
+  if (
+    !name ||
+    !email ||
+    !EMAIL_PATTERN.test(email) ||
+    phone === null ||
+    company === null ||
+    vatId === null ||
+    message === null
+  ) {
     return { ok: false, error: "Bitte prüfen Sie Name und E-Mail-Adresse." };
+  }
+  if (
+    !billingStreet ||
+    billingStreet.length < 3 ||
+    !billingPostalCode ||
+    billingPostalCode.length < 2 ||
+    !billingCity ||
+    !billingCountryCode ||
+    !COUNTRY_CODE_PATTERN.test(billingCountryCode)
+  ) {
+    return { ok: false, error: "Bitte geben Sie vollständige Rechnungsdaten an." };
   }
   if (value.consent !== true) {
     return { ok: false, error: "Bitte bestätigen Sie die Datenschutzhinweise." };
@@ -132,7 +164,13 @@ export function validateInquiryPayload(value: unknown): InquiryValidationResult 
     data: {
       name,
       email,
+      phone,
       company,
+      billingStreet,
+      billingPostalCode,
+      billingCity,
+      billingCountryCode,
+      vatId,
       message,
       consent: true,
       configuration,

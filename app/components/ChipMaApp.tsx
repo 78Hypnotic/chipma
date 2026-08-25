@@ -61,16 +61,44 @@ const MAX_LOGO_BYTES = 5 * 1024 * 1024;
 interface InquiryFormState {
   name: string;
   email: string;
+  phone: string;
   company: string;
+  billingStreet: string;
+  billingPostalCode: string;
+  billingCity: string;
+  billingCountryCode: string;
+  vatId: string;
   message: string;
   consent: boolean;
   website: string;
 }
 
+export interface ChipMaAccount {
+  readonly email: string;
+  readonly isAdmin: boolean;
+  readonly defaults: Partial<Pick<
+    InquiryFormState,
+    | "name"
+    | "phone"
+    | "company"
+    | "billingStreet"
+    | "billingPostalCode"
+    | "billingCity"
+    | "billingCountryCode"
+    | "vatId"
+  >>;
+}
+
 const EMPTY_INQUIRY: InquiryFormState = {
   name: "",
   email: "",
+  phone: "",
   company: "",
+  billingStreet: "",
+  billingPostalCode: "",
+  billingCity: "",
+  billingCountryCode: "DE",
+  vatId: "",
   message: "",
   consent: false,
   website: "",
@@ -95,7 +123,7 @@ function LogoMark() {
   );
 }
 
-function Header() {
+function Header({ account }: { readonly account: ChipMaAccount | null }) {
   return (
     <header className="site-header">
       <div className="site-header__inner">
@@ -110,9 +138,14 @@ function Header() {
           <a href="#material">Material</a>
           <a href="#ablauf">Ablauf</a>
         </nav>
-        <a className="ui-button ui-button--primary ui-button--medium header-cta" href="#konfigurator">
-          Jetzt konfigurieren
-        </a>
+        <div className="header-actions">
+          <a className="header-account" href={account ? "/account" : "/login?next=/account"}>
+            {account ? "Mein Konto" : "Anmelden"}
+          </a>
+          <a className="ui-button ui-button--primary ui-button--medium header-cta" href="#konfigurator">
+            Jetzt konfigurieren
+          </a>
+        </div>
       </div>
     </header>
   );
@@ -206,12 +239,16 @@ function ChipPreview({ config, logoUrl }: ChipPreviewProps) {
  * Renders the complete client-side configurator and keeps its preview, pricing,
  * upload validation, and inquiry summary synchronized from one configuration.
  */
-export function ChipMaApp() {
+export function ChipMaApp({ account }: { readonly account: ChipMaAccount | null }) {
   const [config, setConfig] = useState<ChipConfiguration>(DEFAULT_CONFIG);
   const [logoUrl, setLogoUrl] = useState("");
   const [logoError, setLogoError] = useState("");
   const [copyStatus, setCopyStatus] = useState("");
-  const [inquiry, setInquiry] = useState<InquiryFormState>(EMPTY_INQUIRY);
+  const [inquiry, setInquiry] = useState<InquiryFormState>(() => ({
+    ...EMPTY_INQUIRY,
+    ...account?.defaults,
+    email: account?.email ?? "",
+  }));
   const [inquiryStatus, setInquiryStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [inquiryMessage, setInquiryMessage] = useState("");
 
@@ -289,7 +326,10 @@ export function ChipMaApp() {
       const request = await fetch("/api/inquiries", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...inquiry, configuration: config }),
+        body: JSON.stringify({
+          ...inquiry,
+          configuration: config,
+        }),
       });
       const result = (await request.json().catch(() => null)) as Record<string, unknown> | null;
       if (!request.ok) {
@@ -297,8 +337,8 @@ export function ChipMaApp() {
       }
 
       setInquiryStatus("success");
-      setInquiryMessage("Ihre Anfrage ist eingegangen. Wir melden uns mit einem geprüften Angebot.");
-      setInquiry((current) => ({ ...EMPTY_INQUIRY, name: current.name, email: current.email }));
+      setInquiryMessage("Ihre Bestellung ist eingegangen. Wir melden uns mit dem geprüften Angebot.");
+      setInquiry((current) => ({ ...current, message: "", consent: false, website: "" }));
     } catch (error) {
       setInquiryStatus("error");
       setInquiryMessage(error instanceof Error ? error.message : "Die Anfrage konnte nicht gesendet werden.");
@@ -322,7 +362,7 @@ export function ChipMaApp() {
 
   return (
     <div id="top" className="site-shell">
-      <Header />
+      <Header account={account} />
       <main>
         <Hero />
 
@@ -331,8 +371,8 @@ export function ChipMaApp() {
             <p className="section-kicker">Direkt kalkulieren</p>
             <h2 id="configurator-title">Ihr ChipMa-Konfigurator</h2>
             <p>
-              Sieben klare Schritte, keine Anmeldung. Vorschau und Platzhalterpreis
-              aktualisieren sich bei jeder Auswahl.
+              Sieben klare Schritte. Bestellung als Gast oder mit Kundenkonto –
+              Vorschau und Platzhalterpreis aktualisieren sich bei jeder Auswahl.
             </p>
           </div>
 
@@ -593,7 +633,17 @@ export function ChipMaApp() {
                 <form className="inquiry-form" onSubmit={submitInquiry}>
                   <div className="inquiry-form__heading">
                     <strong>Unverbindlich anfragen</strong>
-                    <span>Konfiguration und Kontaktdaten werden sicher an PrintMa übermittelt.</span>
+                    <span>Wir prüfen Konfiguration und Preis, bevor der Auftrag verbindlich wird.</span>
+                  </div>
+                  <div className="account-callout">
+                    {account ? (
+                      <span>Angemeldet als <strong>{account.email}</strong>. Die Bestellung erscheint in deinem Konto.</span>
+                    ) : (
+                      <span>
+                        Gastbestellung möglich. <a href="/login?next=/#konfigurator">Konto erstellen</a>,
+                        um diese und spätere Bestellungen zentral zu sehen.
+                      </span>
+                    )}
                   </div>
                   <div className="inquiry-form__grid">
                     <Field
@@ -614,13 +664,67 @@ export function ChipMaApp() {
                       required
                     />
                   </div>
+                  <div className="inquiry-form__grid">
+                    <Field
+                      label="Telefon (optional)"
+                      type="tel"
+                      value={inquiry.phone}
+                      onChange={(event) => updateInquiry("phone", event.target.value)}
+                      autoComplete="tel"
+                      maxLength={40}
+                    />
+                    <Field
+                      label="Verein oder Unternehmen (optional)"
+                      value={inquiry.company}
+                      onChange={(event) => updateInquiry("company", event.target.value)}
+                      autoComplete="organization"
+                      maxLength={120}
+                    />
+                  </div>
                   <Field
-                    label="Verein oder Unternehmen (optional)"
-                    value={inquiry.company}
-                    onChange={(event) => updateInquiry("company", event.target.value)}
-                    autoComplete="organization"
-                    maxLength={120}
+                    label="Straße und Hausnummer"
+                    value={inquiry.billingStreet}
+                    onChange={(event) => updateInquiry("billingStreet", event.target.value)}
+                    autoComplete="street-address"
+                    maxLength={160}
+                    required
                   />
+                  <div className="inquiry-form__grid inquiry-form__grid--address">
+                    <Field
+                      label="PLZ"
+                      value={inquiry.billingPostalCode}
+                      onChange={(event) => updateInquiry("billingPostalCode", event.target.value)}
+                      autoComplete="postal-code"
+                      maxLength={20}
+                      required
+                    />
+                    <Field
+                      label="Ort"
+                      value={inquiry.billingCity}
+                      onChange={(event) => updateInquiry("billingCity", event.target.value)}
+                      autoComplete="address-level2"
+                      maxLength={100}
+                      required
+                    />
+                  </div>
+                  <div className="inquiry-form__grid">
+                    <Field
+                      label="Ländercode"
+                      value={inquiry.billingCountryCode}
+                      onChange={(event) => updateInquiry("billingCountryCode", event.target.value.toUpperCase())}
+                      autoComplete="country"
+                      minLength={2}
+                      maxLength={2}
+                      pattern="[A-Za-z]{2}"
+                      required
+                    />
+                    <Field
+                      label="USt-IdNr. (optional)"
+                      value={inquiry.vatId}
+                      onChange={(event) => updateInquiry("vatId", event.target.value)}
+                      maxLength={40}
+                    />
+                  </div>
                   <TextareaField
                     label="Nachricht (optional)"
                     value={inquiry.message}
@@ -653,7 +757,7 @@ export function ChipMaApp() {
                     size="large"
                     disabled={inquiryStatus === "submitting"}
                   >
-                    {inquiryStatus === "submitting" ? "Wird gesendet …" : "Anfrage sicher senden"}
+                    {inquiryStatus === "submitting" ? "Wird gesendet …" : "Bestellung sicher senden"}
                   </Button>
                   <div className="summary-actions">
                     <Button variant="ghost" onClick={copyConfiguration}>

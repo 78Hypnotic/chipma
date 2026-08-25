@@ -3,6 +3,8 @@ import { withSupabase } from "@supabase/server";
 
 const MAX_BODY_BYTES = 16_384;
 const SOURCE_HASH_PATTERN = /^[a-f0-9]{64}$/;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const COUNTRY_CODE_PATTERN = /^[A-Z]{2}$/;
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -55,7 +57,7 @@ function jsonResponse(body: UnknownRecord, status: number): Response {
  * authoritative price calculation and the persistent ten-minute rate limit.
  */
 const handler = {
-  fetch: withSupabase({ auth: ["publishable", "secret"] }, async (request, context) => {
+  fetch: withSupabase({ auth: "secret:chipma_site" }, async (request, context) => {
     if (request.method !== "POST") {
       return jsonResponse({ error: "method_not_allowed" }, 405);
     }
@@ -83,13 +85,24 @@ const handler = {
 
     const sourceHash = request.headers.get("x-chipma-source-hash") ?? "";
     const email = typeof payload.email === "string" ? payload.email.trim().toLowerCase() : "";
+    const userId = typeof payload.userId === "string" ? payload.userId : null;
+    const countryCode = typeof payload.billingCountryCode === "string"
+      ? payload.billingCountryCode.trim().toUpperCase()
+      : "";
     const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     if (
       !SOURCE_HASH_PATTERN.test(sourceHash) ||
+      (userId !== null && !UUID_PATTERN.test(userId)) ||
       !isBoundedString(payload.name, 1, 80) ||
       !emailIsValid ||
       email.length > 254 ||
+      (payload.phone !== "" && payload.phone != null && !isBoundedString(payload.phone, 1, 40)) ||
       (payload.company !== "" && payload.company != null && !isBoundedString(payload.company, 1, 120)) ||
+      !isBoundedString(payload.billingStreet, 3, 160) ||
+      !isBoundedString(payload.billingPostalCode, 2, 20) ||
+      !isBoundedString(payload.billingCity, 1, 100) ||
+      !COUNTRY_CODE_PATTERN.test(countryCode) ||
+      (payload.vatId !== "" && payload.vatId != null && !isBoundedString(payload.vatId, 1, 40)) ||
       (payload.message !== "" && payload.message != null && !isBoundedString(payload.message, 1, 1000)) ||
       payload.consent !== true ||
       !isValidConfiguration(payload.configuration)
@@ -98,11 +111,18 @@ const handler = {
     }
 
     const { data, error } = await context.supabaseAdmin
-      .from("chipma_inquiries")
+      .from("chipma_orders")
       .insert({
-        name: String(payload.name).trim(),
+        user_id: userId,
+        customer_name: String(payload.name).trim(),
         email,
-        company: typeof payload.company === "string" ? payload.company.trim() || null : null,
+        phone: typeof payload.phone === "string" ? payload.phone.trim() || null : null,
+        billing_company: typeof payload.company === "string" ? payload.company.trim() || null : null,
+        billing_street: String(payload.billingStreet).trim(),
+        billing_postal_code: String(payload.billingPostalCode).trim(),
+        billing_city: String(payload.billingCity).trim(),
+        billing_country_code: countryCode,
+        vat_id: typeof payload.vatId === "string" ? payload.vatId.trim() || null : null,
         message: typeof payload.message === "string" ? payload.message.trim() || null : null,
         configuration: payload.configuration,
         quoted_total_cents: 0,
@@ -112,12 +132,15 @@ const handler = {
         origin: request.headers.get("x-chipma-origin")?.slice(0, 255) ?? null,
         consent_at: new Date().toISOString(),
       })
-      .select("id, quoted_total_cents")
+      .select("id, order_number, quoted_total_cents")
       .single();
 
     if (error) {
       if (error.message.includes("rate_limit_exceeded")) {
         return jsonResponse({ error: "rate_limit_exceeded" }, 429);
+      }
+      if (error.message.includes("invalid_order_owner")) {
+        return jsonResponse({ error: "invalid_order_owner" }, 400);
       }
       return jsonResponse({ error: "persistence_failed" }, 500);
     }
@@ -125,7 +148,8 @@ const handler = {
     return jsonResponse(
       {
         ok: true,
-        inquiryId: data.id,
+        orderId: data.id,
+        orderNumber: data.order_number,
         quotedTotalCents: data.quoted_total_cents,
       },
       201,

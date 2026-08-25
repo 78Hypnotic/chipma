@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      chipma_admin_settings: {
+        Row: {
+          analytics_lookback_days: number
+          default_country_code: string
+          id: string
+          order_notification_email: string
+          support_email: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          analytics_lookback_days?: number
+          default_country_code?: string
+          id?: string
+          order_notification_email?: string
+          support_email?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          analytics_lookback_days?: number
+          default_country_code?: string
+          id?: string
+          order_notification_email?: string
+          support_email?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       chipma_inquiries: {
         Row: {
           company: string | null
@@ -65,12 +95,132 @@ export type Database = {
         }
         Relationships: []
       }
+      chipma_orders: {
+        Row: {
+          billing_city: string
+          billing_company: string | null
+          billing_country_code: string
+          billing_postal_code: string
+          billing_street: string
+          configuration: Json
+          consent_at: string
+          created_at: string
+          customer_name: string
+          email: string
+          id: string
+          message: string | null
+          order_number: number
+          origin: string | null
+          phone: string | null
+          pricing_version: string
+          quoted_total_cents: number
+          source_hash: string
+          status: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string | null
+          vat_id: string | null
+        }
+        Insert: {
+          billing_city: string
+          billing_company?: string | null
+          billing_country_code?: string
+          billing_postal_code: string
+          billing_street: string
+          configuration: Json
+          consent_at: string
+          created_at?: string
+          customer_name: string
+          email: string
+          id?: string
+          message?: string | null
+          order_number?: never
+          origin?: string | null
+          phone?: string | null
+          pricing_version: string
+          quoted_total_cents: number
+          source_hash: string
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string | null
+          vat_id?: string | null
+        }
+        Update: {
+          billing_city?: string
+          billing_company?: string | null
+          billing_country_code?: string
+          billing_postal_code?: string
+          billing_street?: string
+          configuration?: Json
+          consent_at?: string
+          created_at?: string
+          customer_name?: string
+          email?: string
+          id?: string
+          message?: string | null
+          order_number?: never
+          origin?: string | null
+          phone?: string | null
+          pricing_version?: string
+          quoted_total_cents?: number
+          source_hash?: string
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string | null
+          vat_id?: string | null
+        }
+        Relationships: []
+      }
+      chipma_profiles: {
+        Row: {
+          billing_city: string | null
+          billing_country_code: string
+          billing_postal_code: string | null
+          billing_street: string | null
+          company: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+          vat_id: string | null
+        }
+        Insert: {
+          billing_city?: string | null
+          billing_country_code?: string
+          billing_postal_code?: string | null
+          billing_street?: string | null
+          company?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          updated_at?: string
+          vat_id?: string | null
+        }
+        Update: {
+          billing_city?: string | null
+          billing_country_code?: string
+          billing_postal_code?: string | null
+          billing_street?: string | null
+          company?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          vat_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      claim_my_chipma_orders: { Args: never; Returns: number }
     }
     Enums: {
       [_ in never]: never

@@ -1,6 +1,6 @@
 import { validateInquiryPayload } from "../../lib/inquiry";
-
-export const runtime = "edge";
+import { getVerifiedUser } from "../../lib/auth";
+export const runtime = "nodejs";
 
 const MAX_BODY_BYTES = 16_384;
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
@@ -13,16 +13,20 @@ function response(body: Record<string, unknown>, status: number): Response {
 }
 
 async function createFingerprint(request: Request): Promise<string> {
-  const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  const address =
-    request.headers.get("cf-connecting-ip") ??
-    forwardedFor ??
-    request.headers.get("x-real-ip") ??
-    "unknown";
+  const address = getClientAddress(request) ?? "unknown";
   const userAgent = request.headers.get("user-agent")?.slice(0, 500) ?? "unknown";
   const bytes = new TextEncoder().encode(`${address}|${userAgent}`);
   const digest = await crypto.subtle.digest("SHA-256", bytes);
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function getClientAddress(request: Request): string | null {
+  const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  return (
+    request.headers.get("cf-connecting-ip") ??
+    forwardedFor ??
+    request.headers.get("x-real-ip")
+  );
 }
 
 function isRateLimited(fingerprint: string, now: number): boolean {
@@ -63,23 +67,25 @@ export async function POST(request: Request): Promise<Response> {
 
   const validation = validateInquiryPayload(input);
   if (!validation.ok) return response({ error: validation.error }, 400);
-  if (validation.data.spam) return response({ ok: true }, 202);
 
   const fingerprint = await createFingerprint(request);
   if (isRateLimited(fingerprint, Date.now())) {
     return response({ error: "Zu viele Anfragen. Bitte versuchen Sie es später erneut." }, 429);
   }
+  if (validation.data.spam) return response({ ok: true }, 202);
+
+  const user = await getVerifiedUser();
 
   const supabaseUrl = process.env.SUPABASE_URL;
-  const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY;
-  if (!supabaseUrl || !publishableKey) {
+  const secretKey = process.env.SUPABASE_SECRET_KEY;
+  if (!supabaseUrl || !secretKey) {
     return response({ error: "Der Anfrage-Service ist derzeit nicht verfügbar." }, 503);
   }
 
   const backendResponse = await fetch(`${supabaseUrl}/functions/v1/submit-inquiry`, {
     method: "POST",
     headers: {
-      apikey: publishableKey,
+      apikey: secretKey,
       "Content-Type": "application/json",
       "x-chipma-source-hash": fingerprint,
       "x-chipma-user-agent": request.headers.get("user-agent")?.slice(0, 500) ?? "",
@@ -87,8 +93,15 @@ export async function POST(request: Request): Promise<Response> {
     },
     body: JSON.stringify({
       name: validation.data.name,
-      email: validation.data.email,
+      email: user?.email || validation.data.email,
+      userId: user?.id ?? null,
+      phone: validation.data.phone,
       company: validation.data.company,
+      billingStreet: validation.data.billingStreet,
+      billingPostalCode: validation.data.billingPostalCode,
+      billingCity: validation.data.billingCity,
+      billingCountryCode: validation.data.billingCountryCode,
+      vatId: validation.data.vatId,
       message: validation.data.message,
       consent: validation.data.consent,
       configuration: validation.data.configuration,
@@ -111,7 +124,8 @@ export async function POST(request: Request): Promise<Response> {
   return response(
     {
       ok: true,
-      inquiryId: result?.inquiryId,
+      orderId: result?.orderId,
+      orderNumber: result?.orderNumber,
       quotedTotalCents: result?.quotedTotalCents,
     },
     201,

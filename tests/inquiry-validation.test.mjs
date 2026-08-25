@@ -8,7 +8,13 @@ function inquiry(overrides = {}) {
   return {
     name: "Manuel Mustermann",
     email: "MANUEL@example.de",
+    phone: "+49 7731 123456",
     company: "SV Engen",
+    billingStreet: "Hauptstraße 12",
+    billingPostalCode: "78234",
+    billingCity: "Engen",
+    billingCountryCode: "de",
+    vatId: "DE123456789",
     message: "Bitte um ein Angebot.",
     consent: true,
     website: "",
@@ -30,6 +36,7 @@ test("validates, sanitizes and prices an inquiry", () => {
 
   assert.equal(result.data.name, "Manuel Mustermann");
   assert.equal(result.data.email, "manuel@example.de");
+  assert.equal(result.data.billingCountryCode, "DE");
   assert.equal(result.data.configuration.logoName, "wappen_script_.svg");
   assert.equal(result.data.price.total, 108);
   assert.equal(result.data.spam, false);
@@ -39,6 +46,13 @@ test("rejects malformed contact data and missing consent", () => {
   assert.equal(validateInquiryPayload(inquiry({ email: "invalid" })).ok, false);
   assert.equal(validateInquiryPayload(inquiry({ name: "" })).ok, false);
   assert.equal(validateInquiryPayload(inquiry({ consent: false })).ok, false);
+});
+
+test("requires complete invoice data", () => {
+  assert.equal(validateInquiryPayload(inquiry({ billingStreet: "" })).ok, false);
+  assert.equal(validateInquiryPayload(inquiry({ billingPostalCode: "1" })).ok, false);
+  assert.equal(validateInquiryPayload(inquiry({ billingCity: "" })).ok, false);
+  assert.equal(validateInquiryPayload(inquiry({ billingCountryCode: "Deutschland" })).ok, false);
 });
 
 test("rejects forged configuration values instead of clamping them", () => {
